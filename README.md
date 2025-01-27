@@ -1,2 +1,2 @@
 # stella
-nasa chat 
+chatbot for nasa apis
