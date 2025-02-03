@@ -1,0 +1,12 @@
+{
+  "name": "Flask App",
+  "postCreateCommand": "pip install -r requirements.txt",
+  "forwardPorts": [5000],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.pythonPath": "/usr/local/bin/python"
+      }
+    }
+  }
+}
