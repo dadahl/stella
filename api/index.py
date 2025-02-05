@@ -8,6 +8,19 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS
 import json
+import sys
+import os
+
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Get the parent directory
+parent_dir = os.path.dirname(current_dir)
+
+# Add the parent directory to the system path
+sys.path.append(parent_dir)
+
+# Now you can import modules from the parent directory 
 import assistant
 
 app = Flask(__name__)
