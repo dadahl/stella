@@ -26,7 +26,7 @@ import assistant
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-port = 8767
+
 
 @app.route('/', methods=['POST'])
 def home():
@@ -41,5 +41,4 @@ def home():
 def handler(environ, start_response):
     return app(environ, start_response)
 
-if __name__ == '__main__':
-    app.run(host="localhost",port=port, debug=True, use_reloader=False)
+
