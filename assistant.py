@@ -1,4 +1,4 @@
-import openai
+#import openai
 import json
 from datetime import datetime
 import os
@@ -11,7 +11,7 @@ conversation_state = {}
 with open("./assistant_config.json", "r") as file:
     agent_config = json.load(file)
 
-openai.api_key = os.getenv("OpenAI_APIKEY")
+#openai.api_key = os.getenv("OpenAI_APIKEY")
 nasa_key = agent_config.get("nasaAPI")
 manifest = agent_config.get("manifest")
 
