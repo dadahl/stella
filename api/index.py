@@ -31,13 +31,13 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['POST'])
 def home():
-    inputOVON = json.loads( request.data )
+    # inputOVON = json.loads( request.data )
+    # host = request.host.split(":")[0]
+    # sender_from = f"http://{host}"
+    # ovon_response = assistant.generate_response(inputOVON, sender_from)
 
-    host = request.host.split(":")[0]
-    sender_from = f"http://{host}"
-    ovon_response = assistant.generate_response(inputOVON, sender_from)
-
-    return ovon_response
+    # return ovon_response
+    return "hello from Flask on Vercel"
 
 def handler(environ, start_response):
     return app(environ, start_response)
