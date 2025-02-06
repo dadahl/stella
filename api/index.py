@@ -29,7 +29,7 @@ app = Flask(__name__)
 #CORS(app, resources={r"/*": {"origins": "*"}})
 
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET','POST'])
 def home():
     # inputOVON = json.loads( request.data )
     # host = request.host.split(":")[0]
