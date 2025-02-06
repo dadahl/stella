@@ -26,7 +26,7 @@ sys.path.append(parent_dir)
 import assistant
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+#CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/', methods=['POST'])
@@ -39,7 +39,7 @@ def home():
     # return ovon_response
     return "hello from Flask on Vercel"
 
-def handler(environ, start_response):
-    return app(environ, start_response)
+# def handler(environ, start_response):
+#     return app(environ, start_response)
 
 
