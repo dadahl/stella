@@ -47,46 +47,47 @@ def search_intent(input_text):
 
 server_info = ""
 
-def generate_openai_response(prompt):
-    """Call OpenAI's API to generate a response based on the prompt."""
-    try:
-        # Build the message history from conversation_state, if available
-        message_history = [{"role": "system", "content": "You are a helpful assistant named pete"}]
 
-        # Add prior context/messages from the conversation state
-        if "messages" in conversation_state:
-            message_history.extend(conversation_state["messages"])  # Assuming conversation_state["messages"] is a list of messages
+# def generate_openai_response(prompt):
+#     """Call OpenAI's API to generate a response based on the prompt."""
+#     try:
+#         # Build the message history from conversation_state, if available
+#         message_history = [{"role": "system", "content": "You are a helpful assistant named pete"}]
 
-        # Add the latest user message to the conversation
-        message_history.append({"role": "user", "content": prompt})
+#         # Add prior context/messages from the conversation state
+#         if "messages" in conversation_state:
+#             message_history.extend(conversation_state["messages"])  # Assuming conversation_state["messages"] is a list of messages
 
-        # Make the API call
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=message_history,
-            max_tokens=200,
-            temperature=0.7
-        )
+#         # Add the latest user message to the conversation
+#         message_history.append({"role": "user", "content": prompt})
 
-        # Ensure response is available before trying to access it
-        if response and "choices" in response and len(response.choices) > 0:
-            assistant_reply = response.choices[0].message["content"].strip()
+#         # Make the API call
+#         response = openai.ChatCompletion.create(
+#             model="gpt-4",
+#             messages=message_history,
+#             max_tokens=200,
+#             temperature=0.7
+#         )
 
-            # Update conversation_state with the latest assistant reply
-            if "messages" not in conversation_state:
-                conversation_state["messages"] = []
-            conversation_state["messages"].append({"role": "user", "content": prompt})
-            conversation_state["messages"].append({"role": "assistant", "content": assistant_reply})
+#         # Ensure response is available before trying to access it
+#         if response and "choices" in response and len(response.choices) > 0:
+#             assistant_reply = response.choices[0].message["content"].strip()
 
-            return assistant_reply
-        else:
-            return "Error: No valid response received."
-    except openai.OpenAIError as e:  # Catch OpenAI API errors
-        print(f"Error with OpenAI API: {e}")
-        return f"Error with OpenAI API: {str(e)}"
-    except Exception as e:  # Catch general errors
-        print(f"Unexpected error: {e}")
-        return f"Unexpected error: {str(e)}"
+#             # Update conversation_state with the latest assistant reply
+#             if "messages" not in conversation_state:
+#                 conversation_state["messages"] = []
+#             conversation_state["messages"].append({"role": "user", "content": prompt})
+#             conversation_state["messages"].append({"role": "assistant", "content": assistant_reply})
+
+#             return assistant_reply
+#         else:
+#             return "Error: No valid response received."
+#     except openai.OpenAIError as e:  # Catch OpenAI API errors
+#         print(f"Error with OpenAI API: {e}")
+#         return f"Error with OpenAI API: {str(e)}"
+#     except Exception as e:  # Catch general errors
+#         print(f"Unexpected error: {e}")
+#         return f"Unexpected error: {str(e)}"
 
 def generate_response(inputOVON, sender_from):
     global server_info
@@ -96,10 +97,10 @@ def generate_response(inputOVON, sender_from):
     detected_intents = []
     include_manifest_request = False
 
-    openai_api_key = inputOVON["ovon"]["conversation"].get("openAIKey", None)
+    #openai_api_key = inputOVON["ovon"]["conversation"].get("openAIKey", None)
 
-    if openai_api_key:
-        openai.api_key = openai_api_key
+    # if openai_api_key:
+    #     openai.api_key = openai_api_key
 
     for event in inputOVON["ovon"]["events"]:
         event_type = event["eventType"]
@@ -147,7 +148,8 @@ def generate_response(inputOVON, sender_from):
                    response_text = f"Today's astronomy picture can be found at: {picture_url}. Here's an explanation {explanation}" 
                    print(f"Generated nasa response:{response_text}")
                 else:
-                        response_text = generate_openai_response(user_input)
+                        #response_text = generate_openai_response(user_input)
+                        response_text = "I don't know the answer to that"
             
 
     currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
