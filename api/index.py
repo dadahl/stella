@@ -32,9 +32,9 @@ app = Flask(__name__)
 @app.route('/', methods=['GET','POST'])
 def home():
     inputOVON = json.loads( request.data )
-    # host = request.host.split(":")[0]
-    # sender_from = f"http://{host}"
-    # ovon_response = assistant.generate_response(inputOVON, sender_from)
+    host = request.host.split(":")[0]
+    sender_from = f"http://{host}"
+    ovon_response = assistant.generate_response(inputOVON, sender_from)
 
     # return ovon_response
     return "hello from Flask on Vercel"
