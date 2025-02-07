@@ -37,7 +37,7 @@ def home():
     ovon_response = assistant.generate_response(inputOVON, sender_from)
 
     # return ovon_response
-    return "hello from Flask on Vercel"
+    return ovon_response
 
 # def handler(environ, start_response):
 #     return app(environ, start_response)
