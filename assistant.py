@@ -145,7 +145,7 @@ def generate_response(inputOVON, sender_from):
                    nasa_data = nasa_api.get_nasa()
                    explanation, picture_url = nasa_api.parse_nasa_data(nasa_data)
                    conversation_state[conversation_id]["explanation"] = explanation
-                   response_text = f"Today's astronomy picture can be found at: {picture_url}. Here's an explanation {explanation}" 
+                   response_text = f"<html><body>Today's astronomy picture can be found at: {picture_url}. Here's an explanation {explanation} </body ></html>"
                    print(f"Generated nasa response:{response_text}")
                 else:
                         #response_text = generate_openai_response(user_input)
