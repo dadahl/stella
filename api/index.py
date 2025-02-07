@@ -31,7 +31,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET','POST'])
 def home():
-    # inputOVON = json.loads( request.data )
+    inputOVON = json.loads( request.data )
     # host = request.host.split(":")[0]
     # sender_from = f"http://{host}"
     # ovon_response = assistant.generate_response(inputOVON, sender_from)
