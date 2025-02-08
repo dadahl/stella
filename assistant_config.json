@@ -13,7 +13,7 @@
             "conversationalName": "Stella",
             "serviceName": "space assistant",
             "organization": "BeaconForge",
-            "serviceEndpoint": "https://https://stella-alpha.vercel.app/",
+            "serviceEndpoint": "https://stella-alpha.vercel.app/",
             "role": "help with space facts",
             "synopsis": "knows about space"
         },
