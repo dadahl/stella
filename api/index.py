@@ -1,45 +1,56 @@
-# The latest working min Server code 20231105
-# =================================================
-# Note!!!! you will need to install flask_cors
-#    open a bash console and do this
-#    pip3.10 install --user flask_cors
-
-from flask import Flask
-from flask import request
+#!/usr/bin/env python3
+"""
+Vercel-ready Flask server for StellaAgent.
+Supports local testing (flask run) and deployment on Vercel.
+"""
+from flask import Flask, request, Response
 from flask_cors import CORS
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import requests
 import json
 import sys
 import os
 
-# Get the directory of the current script
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Get the parent directory
-parent_dir = os.path.dirname(current_dir)
-
-# Add the parent directory to the system path
-sys.path.append(parent_dir)
-
-# Now you can import modules from the parent directory 
-import assistant
+# Your agent imports
+from stella_agent import load_manifest_from_config, StellaAgent
+from openfloor.envelope import Envelope
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Load agent once
+manifest = load_manifest_from_config()
+agent = StellaAgent(manifest)
 
-@app.route('/', methods=['GET','POST'])
-def home():
-    inputOVON = json.loads( request.data )
-    host = request.host.split(":")[0]
-    sender_from = f"http://{host}"
-    ovon_response = assistant.generate_response(inputOVON, sender_from)
+@app.route("/", methods=["POST"])
+@app.route("/api", methods=["POST"])
+@app.route("/api/", methods=["POST"])
+def handle_request():
+    payload_text = request.get_data(as_text=True)
 
-    # return ovon_response
-    return ovon_response
+    # Parse incoming envelope
+    try:
+        in_envelope = Envelope.from_json(payload_text, as_payload=True)
+    except Exception:
+        try:
+            in_envelope = Envelope.from_json(json.dumps(request.get_json()), as_payload=True)
+        except Exception as e:
+            return Response(f"Invalid OpenFloor payload: {e}", status=400)
 
-# def handler(environ, start_response):
-#     return app(environ, start_response)
+    # Process and serialize response
+    out_envelope = agent.process_envelope(in_envelope)
+    payload_str = out_envelope.to_json(as_payload=True)
+
+    return Response(payload_str, mimetype="application/json")
 
 
+# Vercel handler - expose the app for serverless
+handler = app
+
+# -----------------------
+# Local test entrypoint
+# -----------------------
+if __name__ == "__main__":
+    print("Starting local Flask server on http://localhost:8767")
+    app.run(host="localhost", port=8767, debug=True)
