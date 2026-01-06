@@ -1,17 +1,31 @@
-#import openai
+import openai
+from openai import OpenAI
 import json
 from datetime import datetime
 import os
+
+import sys
 import nasa_api 
+import openfloor 
+from openfloor import OpenFloorEvents, OpenFloorAgent, BotAgent
+from openfloor import Manifest, Event, UtteranceEvent, InviteEvent, PublishManifestsEvent
+from openfloor import Envelope, Manifest, Event, UtteranceEvent, InviteEvent, PublishManifestsEvent, GetManifestsEvent, ContextEvent, To, Sender, Parameters
+from openfloor import agent,dialog_event,events,envelope,json_serializable,manifest
 
 import re
 
 conversation_state = {}
 
-with open("./assistant_config.json", "r") as file:
+_MY_DIR = os.path.dirname(__file__)
+_CONFIG_PATH = os.path.join(_MY_DIR, "assistant_config.json")
+with open(_CONFIG_PATH, "r", encoding="utf-8") as file:
     agent_config = json.load(file)
 
-#openai.api_key = os.getenv("OpenAI_APIKEY")
+client = OpenAI(
+  api_key=os.environ['OPENAI_API_KEY'],  # this is also the default, it can be omitted
+)
+
+
 nasa_key = agent_config.get("nasaAPI")
 manifest = agent_config.get("manifest")
 
@@ -48,48 +62,49 @@ def search_intent(input_text):
 server_info = ""
 
 
-# def generate_openai_response(prompt):
-#     """Call OpenAI's API to generate a response based on the prompt."""
-#     try:
-#         # Build the message history from conversation_state, if available
-#         message_history = [{"role": "system", "content": "You are a helpful assistant named pete"}]
+def generate_openai_response(prompt):
+    """Call OpenAI's API to generate a response based on the prompt."""
+    try:
+        # Build the message history from conversation_state, if available
+        message_history = [{"role": "system", "content": "You are a helpful assistant named stella"}]
 
-#         # Add prior context/messages from the conversation state
-#         if "messages" in conversation_state:
-#             message_history.extend(conversation_state["messages"])  # Assuming conversation_state["messages"] is a list of messages
+        # Add prior context/messages from the conversation state
+        if "messages" in conversation_state:
+            message_history.extend(conversation_state["messages"])  # Assuming conversation_state["messages"] is a list of messages
 
-#         # Add the latest user message to the conversation
-#         message_history.append({"role": "user", "content": prompt})
+        # Add the latest user message to the conversation
+        message_history.append({"role": "user", "content": prompt})
+        print(message_history)
 
-#         # Make the API call
-#         response = openai.ChatCompletion.create(
-#             model="gpt-4",
-#             messages=message_history,
-#             max_tokens=200,
-#             temperature=0.7
-#         )
+        # Make the API call
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=message_history,
+            max_tokens=200,
+            temperature=0.7
+        )
 
-#         # Ensure response is available before trying to access it
-#         if response and "choices" in response and len(response.choices) > 0:
-#             assistant_reply = response.choices[0].message["content"].strip()
+        # Ensure response is available before trying to access it
+        if response and "choices" in response and len(response.choices) > 0:
+            assistant_reply = response.choices[0].message["content"].strip()
 
-#             # Update conversation_state with the latest assistant reply
-#             if "messages" not in conversation_state:
-#                 conversation_state["messages"] = []
-#             conversation_state["messages"].append({"role": "user", "content": prompt})
-#             conversation_state["messages"].append({"role": "assistant", "content": assistant_reply})
+            # Update conversation_state with the latest assistant reply
+            if "messages" not in conversation_state:
+                conversation_state["messages"] = []
+            conversation_state["messages"].append({"role": "user", "content": prompt})
+            conversation_state["messages"].append({"role": "assistant", "content": assistant_reply})
 
-#             return assistant_reply
-#         else:
-#             return "Error: No valid response received."
-#     except openai.OpenAIError as e:  # Catch OpenAI API errors
-#         print(f"Error with OpenAI API: {e}")
-#         return f"Error with OpenAI API: {str(e)}"
-#     except Exception as e:  # Catch general errors
-#         print(f"Unexpected error: {e}")
-#         return f"Unexpected error: {str(e)}"
+            return assistant_reply
+        else:
+            return "Error: No valid response received."
+    except openai.badRequestError as e:  # Catch OpenAI API errors
+        print(f"Error with OpenAI API: {e}")
+        return f"Error with OpenAI API: {str(e)}"
+    except Exception as e:  # Catch general errors
+        print(f"Unexpected error: {e}")
+        return f"Unexpected error: {str(e)}"
 
-def generate_response(inputOVON, sender_from):
+def generate_response(inputOpenFloor, sender_from):
     global server_info
     global conversation_history
     server_info = ""
@@ -97,34 +112,19 @@ def generate_response(inputOVON, sender_from):
     detected_intents = []
     include_manifest_request = False
 
-    #openai_api_key = inputOVON["ovon"]["conversation"].get("openAIKey", None)
+    envelope = Envelope.from_json(inputOpenFloor,as_payload=True)  
+    event_list  = envelope.events
+    print(f"Received event to {to_url} from {sender_from}")
 
-    # if openai_api_key:
-    #     openai.api_key = openai_api_key
-
-    for event in inputOVON["ovon"]["events"]:
-        event_type = event["eventType"]
+    for event in event_list:
+        print(event)
+        event_type = event.eventType
+        to_url = event.To.speakerUri if event.To and event.To.speakerUri else "Unknown"
         if event_type == "invite":
-            # Handle invite events
-            utt_event = next((e for e in inputOVON["ovon"]["events"] if e["eventType"] == "whisper"), None)
+            response_text = "Thanks for the invitation, I am ready to assist."
 
-            if utt_event:
-                # Handle the invite with whisper event
-                whisper_text = utt_event["parameters"]["dialogEvent"]["features"]["text"]["tokens"][0]["value"]
-                detected_intents.extend(search_intent(whisper_text) or [])
-                if detected_intents:
-                    response_text = "Hello! How can I assist you today?"
-            else:
-                # Handle the bare invite event
-                print(event_type)
-                if event_type == "invite":
-                    to_url = event.get("sender", {}).get("to", "Unknown")
-                    server_info = f"Server: {to_url}"
-                    response_text = "Thanks for the invitation, I am ready to assist."
-
-        elif event_type == "requestManifest":
-            to_url = event.get("sender", {}).get("to", "Unknown")
-            server_info = f"Server: {to_url}"
+        elif event_type == "getManifests":
+            to_url = envelope.To
             response_text = "Thanks for asking, here is my manifest."
             include_manifest_request = True
 
@@ -132,7 +132,7 @@ def generate_response(inputOVON, sender_from):
             user_input = event["parameters"]["dialogEvent"]["features"]["text"]["tokens"][0]["value"]
             detected_intents.extend(search_intent(user_input) or [])
             print(f"Detected intents: {detected_intents}")
-            conversation_id = inputOVON["ovon"]["conversation"]["id"]
+            conversation_id = inputOpenFloor["openFloor"]["conversation"]["id"]
             response_text = ""
 
             if conversation_id not in conversation_state:
@@ -148,16 +148,17 @@ def generate_response(inputOVON, sender_from):
                    response_text = f"Today's astronomy picture can be found at: {picture_url}. Here's an explanation {explanation}"
                    print(f"Generated nasa response:{response_text}")
                 else:
-                        #response_text = generate_openai_response(user_input)
-                        response_text = "I don't know the answer to that"
+                        response_text = generate_openai_response(user_input)
+            else:
+                response_text = generate_openai_response(user_input)
             
 
     currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # /find the one with utterance, make if statement
-    ovon_response = {
-        "ovon": {
-            "conversation": inputOVON["ovon"]["conversation"],
+    openFloor_response = {
+        "openFloor": {
+            "conversation": inputOpenFloor["openFloor"]["conversation"],
             "schema": {
                 "version": "0.9.0",
                 "url": "not_published_yet"
@@ -181,7 +182,7 @@ def generate_response(inputOVON, sender_from):
                 ]
             }
         }
-        ovon_response["ovon"]["events"].append(whisper_event)
+        openFloor_response["openFloor"]["events"].append(whisper_event)
 
     if include_manifest_request:
         manifestRequestEvent = {
@@ -192,7 +193,7 @@ def generate_response(inputOVON, sender_from):
 
             }
         }
-        ovon_response["ovon"]["events"].append(manifestRequestEvent)
+        openFloor_response["openFloor"]["events"].append(manifestRequestEvent)
 
     utterance_event = {
         "eventType": "utterance",
@@ -211,8 +212,8 @@ def generate_response(inputOVON, sender_from):
             }
         }
     }
-    ovon_response["ovon"]["events"].append(utterance_event)
+    openFloor_response["openFloor"]["events"].append(utterance_event)
 
-    ovon_response_json = json.dumps(ovon_response)
+    openFloor_response_json = json.dumps(openFloor_response)
 
-    return ovon_response_json
+    return openFloor_response_json

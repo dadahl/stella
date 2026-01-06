@@ -1,25 +1,50 @@
 from datetime import datetime
 import dateparser
+import re
+from dateutil import parser, relativedelta
 
 def extract_and_convert_datetime(text):
-    # Parse the input text using dateparser
-    parsed_datetime = dateparser.parse(text, settings={'RELATIVE_BASE': datetime.now()})
-    
-    # Debugging: print the raw parsed datetime
-    print(f"Parsed datetime (raw): {parsed_datetime}")
-    
-    # If a valid datetime is parsed, return the formatted date
-    if parsed_datetime:
-        return parsed_datetime.strftime('%Y-%m-%d %H:%M')
+    found_date = parse_date(text)
+    print(found_date)
+    formatted_date = format_date(found_date)
+    return formatted_date
+
+# Function to parse input date from text
+def parse_date(input_text):
+    date_match = re.search(r'\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b', input_text, re.IGNORECASE)
+    if date_match:
+        parsed_datetime = dateparser.parse(date_match.group(), settings={'PREFER_DATES_FROM': 'past', 'TIMEZONE': 'UTC'})
     else:
-        return "No valid date or time found"
+        parsed_datetime = dateparser.parse(input_text, settings={'PREFER_DATES_FROM': 'future', 'RELATIVE_BASE': datetime.now(), 'TIMEZONE': 'UTC'})
+    
+    if parsed_datetime is None:
+        try:
+            parsed_datetime = parser.parse(input_text, fuzzy=True)
+        except ValueError:
+            return None
+    
+    if parsed_datetime and parsed_datetime > datetime.now():
+        parsed_datetime = parsed_datetime - relativedelta.relativedelta(weeks=1)
+    
+    return parsed_datetime
+
+
+def format_date(parsed_datetime):
+    if parsed_datetime:
+        return parsed_datetime.strftime('%Y-%m-%d')
+    else:
+        return None
+
 
 # Test cases with both absolute and relative dates
 examples = [
-    "The meeting is on January 1, 2024 at 3 PM.",
-    "Let's catch up next Friday at 10:30 AM.",
-    "It happened yesterday at 5 PM.",
-    "We met on March 5th, 2023 at 14:30."
+    "The meeting is on January 1, 2024.",
+    "Let's catch up next Friday.",
+    "It happened yesterday",
+    "We met on March 5th, 2023."
+    "We met last Monday.",              # Date for the previous Monday
+    "See you this Wednesday."          # Date for the upcoming Wednesday
+
 ]
 
 # Print the results
